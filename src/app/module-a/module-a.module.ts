@@ -1,12 +1,14 @@
-import {ModuleWithProviders, NgModule, Provider} from '@angular/core';
+import {ModuleWithProviders, NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
 import {ModuleARoutingModule} from './module-a-routing.module';
 import {ComponentAComponent} from './component-a/component-a.component';
-import {HttpClientModule} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, HttpClientModule, HttpInterceptor} from '@angular/common/http';
 import {InMemoryBackendConfigArgs, InMemoryWebApiModule} from 'angular-in-memory-web-api';
 import {MockData} from './mock-data';
 import {ServiceAService} from './service-a.service';
+import {MyInterceptorAService} from './my-interceptor-a.service';
+import {CoreModule, StaticCoreModule} from '../core/core.module';
 
 
 @NgModule({
@@ -14,17 +16,22 @@ import {ServiceAService} from './service-a.service';
   imports: [
     CommonModule,
     ModuleARoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    StaticCoreModule.forChild()
   ],
   providers: [
-    ServiceAService
+    ServiceAService,
+    {provide: HTTP_INTERCEPTORS, useClass: MyInterceptorAService, multi: true}
   ]
 })
 export class ModuleAModule {
   static forConfig(config: object): ModuleWithProviders {
     return {
       ngModule: ModuleAModule,
-      providers: config['mock'] === true ? InMemoryWebApiModule.forRoot(MockData, {apiBase: 'a/'} as InMemoryBackendConfigArgs).providers : []
+      providers: [
+        ...config['interceptors'],
+        ...config['mock'] === true ? InMemoryWebApiModule.forRoot(MockData, {apiBase: 'a/'} as InMemoryBackendConfigArgs).providers : [],
+      ]
     };
   }
 }
